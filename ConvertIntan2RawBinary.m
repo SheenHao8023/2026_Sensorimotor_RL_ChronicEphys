@@ -47,5 +47,5 @@ for k=1:length(datapath)
 
         end
     end
-    master_kilosort;   % use Kilosort 2.0
+    % master_kilosort;   % use Kilosort 2.0
 end
