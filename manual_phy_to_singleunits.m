@@ -200,8 +200,7 @@ for probe=1:2
             X_max = (mu_est+sigma_est*5);
             X = X_min:(X_max-X_min)/100:X_max;
             Y_fit = normpdf(X,mu_est,sigma_est);
-            Y = histcounts(wave_amp_tmp, X);  
-            Y(end+1) = sum(wave_amp_tmp == X(end)); % histcounts 返回长度为 length(edges)-1，需要手动加上最后一个 bin
+            Y = histc(wave_amp_tmp,X);
             Y = Y/sum(Y)/((X_max-X_min)/100);
             r = corr(Y,Y_fit');
        
@@ -262,10 +261,63 @@ end
 
 %% mannually put in the duplicate unit pair (merge single unit for each subfolder)
 clear;
-single_unit_dir='C:\Users\XinHao\Desktop\BAYLORGC130\2021_02_06\Kilosort_SingleUnits1\';
+% single_unit_dir='C:\Users\XinHao\Desktop\BAYLORGC130\2021_02_06\Kilosort_SingleUnits1\';
+% combine_pairs={
+%   '2_28' '2_31';...
+%   };
+
+% single_unit_dir='C:\Users\XinHao\Desktop\BAYLORGC130\2021_02_06\Kilosort_SingleUnits2\';
+% combine_pairs={
+%    '1_2' '1_26';...
+%    '2_43' '2_44';...
+%    '2_58' '2_59';...
+%    };
+
+% single_unit_dir='C:\Users\XinHao\Desktop\BAYLORGC130\2021_02_07\Kilosort_SingleUnits1\';
+% combine_pairs={
+%    '1_7' '1_77';...
+%    '1_68' '1_69';...
+%    '1_7' '1_76';...
+%    '2_23' '2_27';...
+%    '2_46' '2_48';...
+%    '2_71' '2_72';...
+%    };
+
+% single_unit_dir='C:\Users\XinHao\Desktop\BAYLORGC130\2021_02_07\Kilosort_SingleUnits2\';
+% combine_pairs={
+%    '2_13' '2_14';...
+%    '2_13' '2_16';...
+%    '2_67' '2_68';...   %cell type do not agree 
+%    };
+
+% single_unit_dir='C:\Users\XinHao\Desktop\BAYLORGC130\2021_02_08\Kilosort_SingleUnits1\';
+% combine_pairs={
+%    '1_40' '1_46';...
+%    };
+
+% single_unit_dir='C:\Users\XinHao\Desktop\BAYLORGC130\2021_02_08\Kilosort_SingleUnits2\';
+% combine_pairs={
+%    };
+
+% single_unit_dir='C:\Users\XinHao\Desktop\BAYLORGC130\2021_02_09\Kilosort_SingleUnits1\';
+% combine_pairs={
+% '1_39' '1_96';...
+% '1_60' '1_61';...
+% '1_67' '1_68';...  %cell type do not agree 
+% '2_22' '2_62';...
+%    };
+
+single_unit_dir='C:\Users\XinHao\Desktop\BAYLORGC130\2021_02_09\Kilosort_SingleUnits2\';
 combine_pairs={
-  % '1_11' '1_8';...
-        };
+   '1_41' '1_42';...
+   '1_44' '1_9';...
+   '1_84' '1_85';...
+   '2_2' '2_3';...
+   '2_52' '2_53';...
+   '2_54' '2_55';...
+   '2_102' '2_74';...
+   '2_107' '2_108';...
+   };
 
 if size(combine_pairs,1)>0    
 
@@ -334,8 +386,7 @@ if size(combine_pairs,1)>0
             
             X = X_min:(X_max-X_min)/100:X_max;
             Y_fit = normpdf(X,mu_est,sigma_est);
-            Y = histcounts(wave_amp_tmp,X);
-            Y(end+1) = sum(wave_amp_tmp == X(end));
+            Y = histc(wave_amp_tmp,X);
             Y = Y/sum(Y)/((X_max-X_min)/100);
             r = corr(Y,Y_fit');
             
@@ -445,7 +496,6 @@ for probe=1:2
 end
 
 %% remove bad bitcode trial
-
 clear;
 close all
 session_dir = {
@@ -472,12 +522,3 @@ for probe=1:2
         end
     end
 end
-
-%% compile obj first without unit
-aom=max(obj.wavesurfer.aom_input_trace,[],2);
-x=max(obj.wavesurfer.xGalvo_trace,[],2);
-y=max(obj.wavesurfer.yGalvo_trace,[],2);
-SCsti_trial=find(aom>0.2&x<0.2&y<0.2);
-SNrsti_trial=find(aom>0.2&x>0.2&y<0.2);
-ALMsti_trial=find(aom>0.2&x<0.2&y>0.2);
-control_trial=find(aom<=0.2);
