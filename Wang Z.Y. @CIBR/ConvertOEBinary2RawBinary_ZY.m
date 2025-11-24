@@ -1,7 +1,7 @@
 clear
 addpath(genpath('C:\Kilosort2-user\my_kilosort'));
 datapath={
-    'C:\Users\XinHao\Desktop\2025-10-12_15-40-45\';...
+    'C:\Users\XinHao\Desktop\CIBRZY25\2025-10-12_15-40-45\';...
     };
 
 Laser_trial={
