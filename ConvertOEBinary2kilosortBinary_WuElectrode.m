@@ -21,6 +21,7 @@ for k = 1:length(datapath)
     probe = 1; %region 1 intan headstage 1-64 ch;region 2 intan headstage 65-128 ch etc for mutiple arrays in different regions
     shank = 1; 
     mmapN=1;
+    oepxi=0;
     for probe_tmp=1:probe
         for shank_tmp=1:shank
             if ~exist([file_dir,'Kilosort_data',num2str(probe_tmp),num2str(shank_tmp)]) 
@@ -38,7 +39,7 @@ function func_process_voltage_traces_kilosort_OE_CB64(file_dir, probe, shank, mm
     oebin_path = fullfile(oebin_file(1).folder, oebin_file(1).name);
     D = load_open_ephys_binary(oebin_path, 'continuous', mmapN, 'mmap');
     fs=D.Header.sample_rate;
-    if D.Header.num_channels == 72 % 记录了全部通道，则删除17~48以外的无效通道
+    if D.Header.num_channels == 72 % 如果记录了全部通道，则删除17~48以外的无效通道
         delete_list = [ ...
             arrayfun(@(x) sprintf('CH%d', x), 1:16,  'UniformOutput', false), ...
             arrayfun(@(x) sprintf('CH%d', x), 49:64, 'UniformOutput', false) ...
@@ -60,7 +61,13 @@ function func_process_voltage_traces_kilosort_OE_CB64(file_dir, probe, shank, mm
     Ephystrig_data= D.mapped_copy(D.Header.num_channels-5,:); % BNC3 ch67, intan trigger
     LickingLeft_data = D.mapped_copy(D.Header.num_channels-2,:); % BNC6 (需要check)
     LickingRight_data = D.mapped_copy(D.Header.num_channels-1,:); % BNC7
+    wavesurfer_data(1:30000)=0;
+    bitcode_data(1:30000)=0;
+    Ephystrig_data(1:30000)=0;
+    LickingLeft_data(1:30000)=0;
+    LickingRight_data(1:30000)=0;
 
+    % CB64  version
     % trial_on_tmp= find(diff(wavesurfer_data)>6000)+1;
     % trial_on(1)=trial_on_tmp(1);
     % trial_on=[trial_on(1) trial_on_tmp(find(diff(trial_on_tmp)>40000)+1)];
@@ -74,6 +81,25 @@ function func_process_voltage_traces_kilosort_OE_CB64(file_dir, probe, shank, mm
     Ephystrig_data=Ephystrig_data*D.Header.channels(end).bit_volts;
     LickingLeft_data = LickingLeft_data*D.Header.channels(end).bit_volts;
     LickingRight_data = LickingRight_data*D.Header.channels(end).bit_volts;
+
+    % NP1 version
+    % trial_on_tmp= find(diff(wavesurfer_data>1.5)==1)+1;
+    % trial_on(1)=trial_on_tmp(1);
+    % trial_on=[trial_on(1) trial_on_tmp(find(diff(trial_on_tmp)>2*fs)+1)];
+    % trial_off_tmp= find(diff(wavesurfer_data>1.5)==-1)+1;
+    % trial_off(1)=trial_off_tmp(1);
+    % trial_off=[trial_off(1) trial_off_tmp(find(diff(trial_off_tmp)>2*fs)+1)];
+    % 
+    % trial_on_tmp_E= find(diff(Ephystrig_data>1.5)==1)+1;
+    % trial_on_E(1)=trial_on_tmp_E(1);
+    % trial_on_E=[trial_on_E(1) trial_on_tmp_E(find(diff(trial_on_tmp_E)>2*fs)+1)];
+    % idx_tmp=find(min(abs(repmat(trial_on,length(trial_on_E),1)-repmat(trial_on_E,length(trial_on),1)'))>2*fs);
+    % trial_on(idx_tmp)=[];
+    % trial_off(idx_tmp)=[];
+    % 
+    % if length(trial_on)~=length(trial_off)|length(trial_on)~=length(trial_on_E)
+    %     disp('trigger error');
+    % end
 
     trial_on_tmp= find(diff(Ephystrig_data>1.5)==1)+1;
     trial_on(1)=trial_on_tmp(1);
