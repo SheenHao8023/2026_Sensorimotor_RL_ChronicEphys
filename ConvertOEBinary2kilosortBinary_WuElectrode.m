@@ -5,6 +5,7 @@ datapath={
     'C:\Users\XinHao\Desktop\DiffLearn_MultiRegion\Ephys\CIBRXH027\2025-11-26_10-05-43\';... 
     'C:\Users\XinHao\Desktop\DiffLearn_MultiRegion\Ephys\CIBRXH027\2025-11-27_10-06-00\';... 
     'C:\Users\XinHao\Desktop\DiffLearn_MultiRegion\Ephys\CIBRXH027\2025-11-28_12-27-55\';... 
+    'C:\Users\XinHao\Desktop\DiffLearn_MultiRegion\Ephys\CIBRXH027\2025-12-06_09-48-52\';... 
 };
 % Laser_trial={
 %     [1 2 3];...
@@ -29,12 +30,12 @@ for k = 1:length(datapath)
             end
         end
     end
-    func_process_voltage_traces_kilosort_OE_CB64(file_dir, probe, shank, mmapN);
+    func_process_voltage_traces_kilosort_WuElectrode(file_dir, probe, shank, mmapN);
     % master_kilosort_WuElectrode; 
 end
 
-%% Local func: func_process_voltage_traces_kilosort_OE_CB64
-function func_process_voltage_traces_kilosort_OE_CB64(file_dir, probe, shank, mmapN)
+%% Local func: func_process_voltage_traces_kilosort_WuElectrode
+function func_process_voltage_traces_kilosort_WuElectrode(file_dir, probe, shank, mmapN)
     oebin_file = dir(fullfile(file_dir, '**', 'structure.oebin'));
     oebin_path = fullfile(oebin_file(1).folder, oebin_file(1).name);
     D = load_open_ephys_binary(oebin_path, 'continuous', mmapN, 'mmap');
@@ -53,53 +54,26 @@ function func_process_voltage_traces_kilosort_OE_CB64(file_dir, probe, shank, mm
         D.mapped_copy = D.Data.Data(1).mapped;
     end
     probe_ch = D.Header.num_channels / probe;  
+    shank_ch = 32;
     target_channels = arrayfun(@(x) ['CH' num2str(x)], 17:48, 'UniformOutput', false);
     channel_idx = find(ismember({D.Header.channels.channel_name}, target_channels));
 
     wavesurfer_data= D.mapped_copy(D.Header.num_channels-7,:); % BNC1 ch65
     bitcode_data= D.mapped_copy(D.Header.num_channels-6,:); % BNC2 ch66
     Ephystrig_data= D.mapped_copy(D.Header.num_channels-5,:); % BNC3 ch67, intan trigger
-    LickingLeft_data = D.mapped_copy(D.Header.num_channels-2,:); % BNC6 (需要check)
-    LickingRight_data = D.mapped_copy(D.Header.num_channels-1,:); % BNC7
+    LickingRight_data = D.mapped_copy(D.Header.num_channels-2,:); % BNC6
+    LickingLeft_data = D.mapped_copy(D.Header.num_channels-1,:); % BNC7
     wavesurfer_data(1:30000)=0;
     bitcode_data(1:30000)=0;
     Ephystrig_data(1:30000)=0;
     LickingLeft_data(1:30000)=0;
     LickingRight_data(1:30000)=0;
 
-    % CB64  version
-    % trial_on_tmp= find(diff(wavesurfer_data)>6000)+1;
-    % trial_on(1)=trial_on_tmp(1);
-    % trial_on=[trial_on(1) trial_on_tmp(find(diff(trial_on_tmp)>40000)+1)];
-    % Ephystrig_data=Ephystrig_data>4000;
-    % trial_on_tmp=find(diff(Ephystrig_data)==1)+1;
-    % trial_off_tmp=find(diff(Ephystrig_data)==-1)+1;
-    % trial_off=[trial_off_tmp(find(abs(trial_off_tmp(1:end-1)-trial_on_tmp(2:end))>0.5*fs)) trial_off_tmp(end)];
-
     wavesurfer_data=wavesurfer_data*D.Header.channels(end).bit_volts;
     bitcode_data=bitcode_data*D.Header.channels(end).bit_volts;
     Ephystrig_data=Ephystrig_data*D.Header.channels(end).bit_volts;
-    LickingLeft_data = LickingLeft_data*D.Header.channels(end).bit_volts;
     LickingRight_data = LickingRight_data*D.Header.channels(end).bit_volts;
-
-    % NP1 version
-    % trial_on_tmp= find(diff(wavesurfer_data>1.5)==1)+1;
-    % trial_on(1)=trial_on_tmp(1);
-    % trial_on=[trial_on(1) trial_on_tmp(find(diff(trial_on_tmp)>2*fs)+1)];
-    % trial_off_tmp= find(diff(wavesurfer_data>1.5)==-1)+1;
-    % trial_off(1)=trial_off_tmp(1);
-    % trial_off=[trial_off(1) trial_off_tmp(find(diff(trial_off_tmp)>2*fs)+1)];
-    % 
-    % trial_on_tmp_E= find(diff(Ephystrig_data>1.5)==1)+1;
-    % trial_on_E(1)=trial_on_tmp_E(1);
-    % trial_on_E=[trial_on_E(1) trial_on_tmp_E(find(diff(trial_on_tmp_E)>2*fs)+1)];
-    % idx_tmp=find(min(abs(repmat(trial_on,length(trial_on_E),1)-repmat(trial_on_E,length(trial_on),1)'))>2*fs);
-    % trial_on(idx_tmp)=[];
-    % trial_off(idx_tmp)=[];
-    % 
-    % if length(trial_on)~=length(trial_off)|length(trial_on)~=length(trial_on_E)
-    %     disp('trigger error');
-    % end
+    LickingLeft_data = LickingLeft_data*D.Header.channels(end).bit_volts;
 
     trial_on_tmp= find(diff(Ephystrig_data>1.5)==1)+1;
     trial_on(1)=trial_on_tmp(1);
@@ -145,7 +119,7 @@ function func_process_voltage_traces_kilosort_OE_CB64(file_dir, probe, shank, mm
                 ch_MUA = [];
                 ch_MUA = D.mapped_copy((probe_tmp-1)*probe_ch+1:probe_tmp*probe_ch,sample_point)*D.Header.channels(1).bit_volts;
                 ch_MUA = double(ch_MUA');
-                ch_MUA = ch_MUA(:,(shank_tmp-1)*32+1:shank_tmp*32); %shank_ch = 32
+                ch_MUA = ch_MUA(:,(shank_tmp-1)*shank_ch+1:shank_tmp*shank_ch); 
                 for i_ch = 1:length(channel_idx) % bandpass filter
                     ch_tmp = timeseries(ch_MUA(:, channel_idx(i_ch)),TimeStamps);
                     ch_tmp_MUA = idealfilter(ch_tmp, [300 6000], 'pass');
@@ -190,8 +164,8 @@ function func_process_voltage_traces_kilosort_OE_CB64(file_dir, probe, shank, mm
                 % disp(['write: trial ',num2str(TrialNum)]);
                 ch_MUA = int16(ch_MUA');
                 fwrite(fidout, ch_MUA, 'int16');
-    
                 clear ch_MUA ch_tmp ch_tmp_MUA TimeStamps Trial_time_tmp
+
             end
             fclose(fidout);
             output_file=[file_dir_output,'Trial_time_all_probe',num2str(probe_tmp),'shank',num2str(shank_tmp),'_trial_',num2str(Trial_time_all(2,1)),'_',num2str(Trial_time_all(2,end)),'.mat'];
