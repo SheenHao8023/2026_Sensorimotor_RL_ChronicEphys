@@ -1,14 +1,22 @@
 clear
 addpath(genpath('C:\Kilosort2-user\my_kilosort'));
 datapath={
-    % 'C:\Users\XinHao\Desktop\DiffLearn_MultiRegion\Ephys\CIBRXH027\2025-11-25_12-29-37\';... 
-    % 'C:\Users\XinHao\Desktop\DiffLearn_MultiRegion\Ephys\CIBRXH027\2025-11-26_10-05-43\';... 
-    % 'C:\Users\XinHao\Desktop\DiffLearn_MultiRegion\Ephys\CIBRXH027\2025-11-27_10-06-00\';... 
-    % 'C:\Users\XinHao\Desktop\DiffLearn_MultiRegion\Ephys\CIBRXH027\2025-11-28_12-27-55\';... 
-    % 'C:\Users\XinHao\Desktop\DiffLearn_MultiRegion\Ephys\CIBRXH027\2025-12-06_09-48-52\';... 
-    % 'C:\Users\XinHao\Desktop\DiffLearn_MultiRegion\Ephys\CIBRXH027\2025-12-07_09-51-21\';... 
-    % 'C:\Users\XinHao\Desktop\DiffLearn_MultiRegion\Ephys\CIBRXH027\2025-12-08_14-16-55\';... 
-    'C:\Users\XinHao\Desktop\DiffLearn_MultiRegion\Ephys\CIBRXH027\2025-12-09_09-47-14\';... 
+    % CIBRXH027, probe = 1
+    % 'C:\Users\XinHao\Desktop\DiffLearn_MultiRegion\Ephys\CIBRXH027\2025_11_25\2025-11-25_12-29-37\';... 
+    % 'C:\Users\XinHao\Desktop\DiffLearn_MultiRegion\Ephys\CIBRXH027\2025_11_26\2025-11-26_10-05-43\';... 
+    % 'C:\Users\XinHao\Desktop\DiffLearn_MultiRegion\Ephys\CIBRXH027\2025_11_27\2025-11-27_10-06-00\';... 
+    % 'C:\Users\XinHao\Desktop\DiffLearn_MultiRegion\Ephys\CIBRXH027\2025_11_28\2025-11-28_12-27-55\';... 
+    % 'C:\Users\XinHao\Desktop\DiffLearn_MultiRegion\Ephys\CIBRXH027\2025_12_06\2025-12-06_09-48-52\';... 
+    % 'C:\Users\XinHao\Desktop\DiffLearn_MultiRegion\Ephys\CIBRXH027\2025_12_07\2025-12-07_09-51-21\';... 
+    % 'C:\Users\XinHao\Desktop\DiffLearn_MultiRegion\Ephys\CIBRXH027\2025_12_08\2025-12-08_14-16-55\';... 
+    % 'C:\Users\XinHao\Desktop\DiffLearn_MultiRegion\Ephys\CIBRXH027\2025_12_09\2025-12-09_09-47-14\';... 
+    % 'C:\Users\XinHao\Desktop\DiffLearn_MultiRegion\Ephys\CIBRXH027\2025_12_11\2025-12-11_10-45-22\';... 
+
+    % CIBRXH035, probe = 2
+    'C:\Users\XinHao\Desktop\CoopXiang\CIBRXH035\20260130_1\2026-01-30_16-52-44\';...
+    'C:\Users\XinHao\Desktop\CoopXiang\CIBRXH035\20260130_2\2026-01-30_18-03-25\';...
+    'C:\Users\XinHao\Desktop\CoopXiang\CIBRXH035\20260131_1\2026-01-31_16-49-26\';...
+    'C:\Users\XinHao\Desktop\CoopXiang\CIBRXH035\20260131_2\2026-01-31_17-27-07\';...
 };
 
 % Laser_trial={
@@ -23,7 +31,7 @@ for k = 1:length(datapath)
     i_str=strfind(file_dir,'\');
     % laser_trial = Laser_trial{k};
 
-    probe = 1; %region 1 intan headstage 1-64 ch;region 2 intan headstage 65-128 ch etc for mutiple arrays in different regions
+    probe = 2; %region 1 intan headstage 1-64 ch;region 2 intan headstage 65-128 ch etc for mutiple arrays in different regions
     shank = 1; 
     mmapN=1;
     oepxi=0;
@@ -44,29 +52,53 @@ function func_process_voltage_traces_kilosort_WuElectrode(file_dir, probe, shank
     oebin_path = fullfile(oebin_file(1).folder, oebin_file(1).name);
     D = load_open_ephys_binary(oebin_path, 'continuous', mmapN, 'mmap');
     fs=D.Header.sample_rate;
-    if D.Header.num_channels == 72 % 如果记录了全部通道，则删除17~48以外的无效通道
-        delete_list = [ ...
-            arrayfun(@(x) sprintf('CH%d', x), 1:16,  'UniformOutput', false), ...
-            arrayfun(@(x) sprintf('CH%d', x), 49:64, 'UniformOutput', false) ...
-        ];
-        idx_del = ismember({D.Header.channels.channel_name}, delete_list);
-        D.Header.channels(idx_del) = [];
-        D.Header.num_channels = numel(D.Header.channels);
-        D.mapped_copy = int16(D.Data.Data(1).mapped);
-        D.mapped_copy(idx_del, :) = [];
-    else
-        D.mapped_copy = D.Data.Data(1).mapped;
+
+    probe1_channels = arrayfun(@(x) ['CH' num2str(x)], 17:48, 'UniformOutput', false);
+    probe2_channels = arrayfun(@(x) ['CH' num2str(x)], 81:112, 'UniformOutput', false);
+    channel_index = cell(1, probe);   
+
+    if probe == 1
+        if D.Header.num_channels == 72 % 如果记录了全部通道，则删除17~48以外的无效通道
+            delete_list = [ ...
+                arrayfun(@(x) sprintf('CH%d', x), 1:16,  'UniformOutput', false), ...
+                arrayfun(@(x) sprintf('CH%d', x), 49:64, 'UniformOutput', false) ...
+            ];
+            idx_del = ismember({D.Header.channels.channel_name}, delete_list);
+            D.Header.channels(idx_del) = [];
+            D.Header.num_channels = numel(D.Header.channels);
+            D.mapped_copy = int16(D.Data.Data(1).mapped);
+            D.mapped_copy(idx_del, :) = [];
+        else
+            D.mapped_copy = D.Data.Data(1).mapped;
+        end
+        channel_idx{1} = find(ismember({D.Header.channels.channel_name}, probe1_channels)); % number vector, 如果少记录通道
+    else  % probe = 2
+        if D.Header.num_channels == 136 % 如果记录了全部通道，则删除17~48, 81~112以外的无效通道
+            delete_list = [ ...
+                arrayfun(@(x) sprintf('CH%d', x), 1:16,  'UniformOutput', false), ...
+                arrayfun(@(x) sprintf('CH%d', x), 49:80, 'UniformOutput', false) ...
+                arrayfun(@(x) sprintf('CH%d', x), 113:128, 'UniformOutput', false) ...
+            ];
+            idx_del = ismember({D.Header.channels.channel_name}, delete_list);
+            D.Header.channels(idx_del) = [];
+            D.Header.num_channels = numel(D.Header.channels);
+            D.mapped_copy = int16(D.Data.Data(1).mapped);
+            D.mapped_copy(idx_del, :) = [];
+        else
+            D.mapped_copy = D.Data.Data(1).mapped;
+        end
+        channel_idx{1} = find(ismember({D.Header.channels.channel_name}, probe1_channels));
+        channel_idx{2} = find(ismember({D.Header.channels.channel_name}, probe2_channels)) - numel(channel_idx{1}); % number vector, 如果少记录通道
     end
-    probe_ch = D.Header.num_channels / probe;  
+
+    probe_ch = (D.Header.num_channels-8) / probe;
     shank_ch = 32;
-    target_channels = arrayfun(@(x) ['CH' num2str(x)], 17:48, 'UniformOutput', false);
-    channel_idx = find(ismember({D.Header.channels.channel_name}, target_channels));
 
     wavesurfer_data= D.mapped_copy(D.Header.num_channels-7,:); % BNC1 ch65
     bitcode_data= D.mapped_copy(D.Header.num_channels-6,:); % BNC2 ch66
     Ephystrig_data= D.mapped_copy(D.Header.num_channels-5,:); % BNC3 ch67, intan trigger
-    LickingRight_data = D.mapped_copy(D.Header.num_channels-2,:); % BNC6
-    LickingLeft_data = D.mapped_copy(D.Header.num_channels-1,:); % BNC7
+    LickingLeft_data = D.mapped_copy(D.Header.num_channels-2,:); % BNC6
+    LickingRight_data = D.mapped_copy(D.Header.num_channels-1,:); % BNC7
     wavesurfer_data(1:30000)=0;
     bitcode_data(1:30000)=0;
     Ephystrig_data(1:30000)=0;
@@ -124,17 +156,17 @@ function func_process_voltage_traces_kilosort_WuElectrode(file_dir, probe, shank
                 ch_MUA = D.mapped_copy((probe_tmp-1)*probe_ch+1:probe_tmp*probe_ch,sample_point)*D.Header.channels(1).bit_volts;
                 ch_MUA = double(ch_MUA');
                 ch_MUA = ch_MUA(:,(shank_tmp-1)*shank_ch+1:shank_tmp*shank_ch); 
-                for i_ch = 1:length(channel_idx) % bandpass filter
-                    ch_tmp = timeseries(ch_MUA(:, channel_idx(i_ch)),TimeStamps);
+                for i_ch = 1:length(channel_idx{probe_tmp}) % bandpass filter
+                    ch_tmp = timeseries(ch_MUA(:, channel_idx{probe_tmp}(i_ch)),TimeStamps);
                     ch_tmp_MUA = idealfilter(ch_tmp, [300 6000], 'pass');
-                    ch_MUA(:, channel_idx(i_ch)) = ch_tmp_MUA.data;
+                    ch_MUA(:, channel_idx{probe_tmp}(i_ch)) = ch_tmp_MUA.data;
                 end
 
                 % substract off common noise
                 commonNoise = trimmean(ch_MUA,40,2);
                 i_noise=[find(commonNoise>150);find(commonNoise<-200)]; 
                 t_sample=1.57;
-                for i_ch=1:length(channel_idx) % change the time here acorrding to your behavior and photostim
+                for i_ch=1:length(channel_idx{probe_tmp}) % change the time here acorrding to your behavior and photostim
                     t_post_stim = [0 t_sample+1.3]; % 
                     i_post_stim = find(TimeStamps>t_post_stim(1) & TimeStamps<t_post_stim(2));
                     idx1=i_post_stim(end);
